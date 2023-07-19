@@ -1,11 +1,8 @@
-<!DOCTYPE html>
-<html>
-    <head>
-        <meta charset="utf-8">
-        <title>商品情報詳細画面</title>
-        <link href="{{ asset('css/detail.css') }}" rel="stylesheet">
-    </head>
-    <body class = detailbody>
+@extends('layouts.app')
+
+@section('title', 'Product Detail')
+
+@section('content')
         <h1>商品情報詳細画面</h1>
 
         <div>
@@ -47,5 +44,4 @@
         <button onclick="goBack()">戻る</button>
 
         <script  src="{{asset('js/detail.js')}}"></script>
-    </body>
-</html>
+@endsection
