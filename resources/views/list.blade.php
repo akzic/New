@@ -1,15 +1,8 @@
-<!DOCTYPE html>
-<html >
-    <head>
-        <meta charset="utf-8">
+@extends('layouts.app')
 
-        <title>商品一覧画面</title>
+@section('title', 'Product List')
 
-        <link href="{{ asset('css/list.css') }}" rel="stylesheet">
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-
-    </head>
-    <body class="linkbody">
+@section('content')
         <form>
             <input type = "text" id = "search-input" placeholder = "検索キーワード">
             <select id = "manufacturer-select">
@@ -57,5 +50,4 @@
             </table>
         </div>
         <script  src="{{asset('js/list.js')}}"></script>
-    </body>
-</html>
+@endsection
