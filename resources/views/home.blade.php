@@ -15,10 +15,14 @@
                     @endif
 
                     {{ __('You are logged in!') }}
+                    
+                </div>
+                <div>
+                <a href='http://localhost:8888/New/public/list/' class="btn btn-primary mt-3">{{ __('商品一覧画面へ') }}</a>
                 </div>
             </div>
         </div>
     </div>
 </div>
-<script type = "text/javascript" src = "js/home.js"></script>
+<script src="{{ asset('js/home.js') }}"></script>
 @endsection
