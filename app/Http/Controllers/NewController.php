@@ -14,10 +14,23 @@ use Illuminate\Validation\Rule;
 
 class NewController extends Controller
 {
-    public function showList()
+    public function showList(Request $request)
     {
-        $products = Product::with('company')->get();
-        return view('list', ['products' => $products]);
+        $keyword = $request->input('keyword');
+        $manufacturerId = $request->input('manufacturer');
+        $query = Product::with('company');
+        if ($keyword) {
+            $query->where('product_name', 'like', '%' . $keyword . '%');
+        }
+        if ($manufacturerId) {
+            $query->where('company_id', $manufacturerId);
+        }
+
+        // 検索結果を取得
+        $products = $query->get();
+        $companies = Company::all(); // 登録されているメーカー情報を取得
+
+        return view('list', ['products' => $products, 'companies' => $companies]);
     }
 
     public function login(Request $request)
@@ -31,7 +44,8 @@ class NewController extends Controller
 
     public function showAdd()
     {
-        return view('add');
+        $companies = Company::all();
+        return view('add', compact('companies'));
     }
 
     public function showDetail($id)
@@ -43,7 +57,9 @@ class NewController extends Controller
     public function showEdit($id)
     {
         $product = Product::find($id);
-        return view('edit', compact('product'));
+        $companies = Company::all(); // companiesテーブルからすべてのデータを取得
+
+        return view('edit', compact('product', 'companies'));
     }
 
     public function update(Request $request, $id)
