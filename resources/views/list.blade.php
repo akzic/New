@@ -3,11 +3,17 @@
 @section('title', 'Product List')
 
 @section('content')
-        <form>
+        <form id="search-form">
             <input type = "text" id = "search-input" placeholder = "検索キーワード">
-            <select id = "manufacturer-select">
-                <option value = "">メーカー名</option>
-            </select>
+            <div class="form-group">
+                <label for="manufacturer-select">メーカー名:</label>
+                <select id="manufacturer-select" name="manufacturer">
+                    <option value="">メーカー名</option>
+                    @foreach($companies as $company)
+                        <option value="{{ $company->id }}">{{ $company->company_name }}</option>
+                    @endforeach
+                </select>
+            </div>
             <button type = "button" onclick = "searchProducts()">検索</button>
         </form>
         <div class="links">
@@ -50,4 +56,5 @@
             </table>
         </div>
         <script  src="{{asset('js/list.js')}}"></script>
-@endsection
+
+        @endsection
