@@ -16,7 +16,12 @@
 
             <!-- メーカー名 -->
             <label for="manufacturer">メーカー名</label><br>
-            <input type="text" id="manufacturer" name="manufacturer" placeholder="メーカー名を入力してください" value="{{ old('manufacturer', $product->company->company_name) }}" required><br>
+            <select id="manufacturer" name="manufacturer" required>
+                <option value="" disabled>メーカー名を選択してください</option>
+                @foreach($companies as $company)
+                    <option value="{{ $company->id }}" @if($company->id == $product->company->id) selected @endif>{{ $company->company_name }}</option>
+                @endforeach
+            </select><br>
             @if ($errors->has('manufacturer'))
                 <div class="error-message">{{ $errors->first('manufacturer') }}</div>
             @endif
