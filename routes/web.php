@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\NewController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\Auth\RegisterController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -31,3 +32,6 @@ Route::delete('/products/{id}', [NewController::class, 'destroy'])->name('produc
 Route::put('/products/{id}', [NewController::class, 'update'])->name('product.update');
 
 Route::post('/store', [NewController::class, 'store'])->name('store');
+
+Route::get('/register', 'Auth\RegisterController@showRegistrationForm')->name('register');
+Route::post('/register', 'Auth\RegisterController@register');
