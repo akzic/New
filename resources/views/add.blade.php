@@ -20,7 +20,12 @@
             <!-- メーカー名 -->
             <div class="form-group">
                 <label for="company-name">メーカー名:</label>
-                <input type="text" id="company-name" name="manufacturer" required placeholder="メーカー名を入力してください" value="{{ old('manufacturer') }}">
+                <select id="company-name" name="manufacturer" required>
+                    <option value="" disabled selected>メーカーを選択してください</option>
+                    @foreach($companies as $company)
+                        <option value="{{ $company->id }}">{{ $company->company_name }}</option>
+                    @endforeach
+                </select>
                 @if ($errors->has('manufacturer'))
                     <div class="error-message">{{ $errors->first('manufacturer') }}</div>
                 @endif
@@ -58,7 +63,7 @@
                 <input type="file" id="product-image" name="product-image" accept="image/*">
             </div>
 
-            <input type="submit" value="新規登録">
+            <input type="submit" value="登録">
             <input type="button" value="戻る" onclick="history.back()">
         </form>
 
