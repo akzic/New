@@ -27,7 +27,7 @@ class RedirectIfAuthenticated
         //    }
         //}
 
-        if (!Auth::check() && !in_array('login', $guards) && !$request->is('login')) {
+        if (!Auth::check() && !in_array('login', $guards) && !$request->is('login') && !$request->is('register')) {
             return redirect('/login');
         }
     
