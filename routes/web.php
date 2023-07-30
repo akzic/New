@@ -35,3 +35,5 @@ Route::post('/store', [NewController::class, 'store'])->name('store');
 
 Route::get('/register', 'Auth\RegisterController@showRegistrationForm')->name('register');
 Route::post('/register', 'Auth\RegisterController@register');
+
+Route::post('/purchase', [NewController::class, 'purchase'])->name('purchase');
