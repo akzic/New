@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Redirect;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\View;
 
 class NewController extends Controller
 {
@@ -18,28 +19,43 @@ class NewController extends Controller
     {
         $keyword = $request->input('keyword');
         $manufacturerId = $request->input('manufacturer');
+        $minPrice = $request->input('minPrice');
+        $maxPrice = $request->input('maxPrice');
+        $minStock = $request->input('minStock');
+        $maxStock = $request->input('maxStock');
+        $sortColumn = $request->input('sort', 'id');
+        $sortOrder = $request->input('order', 'desc');
+
         $query = Product::with('company');
+
+        // Apply filters
         if ($keyword) {
             $query->where('product_name', 'like', '%' . $keyword . '%');
         }
         if ($manufacturerId) {
             $query->where('company_id', $manufacturerId);
         }
-
-        // 検索結果を取得
-        $products = $query->get();
-        $companies = Company::all(); // 登録されているメーカー情報を取得
-
-        return view('list', ['products' => $products, 'companies' => $companies]);
-    }
-
-    public function login(Request $request)
-    {
-        if (auth()->check()) {
-            return redirect()->route('home');
-        } else {
-            return redirect()->route('login.form');
+        if ($minPrice) {
+            $query->where('price', '>=', $minPrice);
         }
+        if ($maxPrice) {
+            $query->where('price', '<=', $maxPrice);
+        }
+        if ($minStock) {
+            $query->where('stock', '>=', $minStock);
+        }
+        if ($maxStock) {
+            $query->where('stock', '<=', $maxStock);
+        }
+
+        $query->orderBy($sortColumn, $sortOrder);
+
+        // Get the products
+        $products = $query->get();
+        $companies = Company::all();
+
+        // Render the product list view
+        return view('list', compact('products', 'companies'));
     }
 
     public function showAdd()
@@ -57,7 +73,7 @@ class NewController extends Controller
     public function showEdit($id)
     {
         $product = Product::find($id);
-        $companies = Company::all(); // companiesテーブルからすべてのデータを取得
+        $companies = Company::all(); 
 
         return view('edit', compact('product', 'companies'));
     }
@@ -77,14 +93,11 @@ class NewController extends Controller
 
             $product = Product::find($id);
             $product->product_name = $request->input('name');
-
             $company = Company::firstOrCreate(['company_name' => $request->input('manufacturer')]);
             $product->company_id = $company->id;
-
             $product->price = $request->input('price');
             $product->stock = $request->input('stock');
             $product->comment = $request->input('comment');
-
             $product->save();
 
             DB::commit();
@@ -119,19 +132,11 @@ class NewController extends Controller
             $product->stock = $request->input('stock');
             $product->comment = $request->input('comment');
 
-            $companyName = $request->input('manufacturer');
-            $company = Company::firstOrNew(['company_name' => $companyName]);
-            $company->representive_name = $request->input('representive_name');
-            $company->save();
-
             if ($request->hasFile('product-image')) {
                 $image = $request->file('product-image');
                 $imagePath = $image->store('public/images');
-
                 $imagePath = str_replace('public/', '', $imagePath);
                 $product->img_path = $imagePath;
-
-                $image->storeAs('public/images', $imagePath);
             }
 
             $product->save();
@@ -171,4 +176,49 @@ class NewController extends Controller
             return redirect()->route('list')->with('error', 'Failed to delete the product.');
         }
     }
+
+
+    public function purchase(Request $request)
+    {
+        $productId = $request->get('product_id');
+        $quantity = $request->get('quantity');
+
+        // Start transaction
+        DB::beginTransaction();
+
+        try {
+            // Get product
+            $product = Product::find($productId);
+
+            if (!$product) {
+                return response()->json(['error' => 'Product not found'], 404);
+            }
+
+            // Check product stock
+            if ($product->stock < $quantity) {
+                return response()->json(['error' => 'Not enough stock for this product'], 400);
+            }
+
+            // Decrease product stock
+            $product->stock -= $quantity;
+            $product->save();
+
+            // Create new sale record
+            $sale = new Sale();
+            $sale->product_id = $productId;
+            $sale->quantity = $quantity;
+            $sale->save();
+
+            // Commit transaction
+            DB::commit();
+
+            return response()->json(['success' => 'Purchase completed successfully'], 200);
+        } catch (\Exception $e) {
+            // Rollback transaction
+            DB::rollBack();
+
+            return response()->json(['error' => 'Purchase failed: ' . $e->getMessage()], 500);
+        }
+    }
+
 }
