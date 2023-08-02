@@ -62,17 +62,19 @@ function searchProducts(event) {
 }
 
 function fetchProductList(url) {
-  fetch(url)
-    .then(response => response.text()) // Parse the HTML response as text
-    .then(data => {
+  $.ajax({
+    url: url,
+    type: 'GET',
+    success: function(data) {
       // Replace the product list container with new HTML content
       const productListContainer = document.getElementById('product-list');
       productListContainer.innerHTML = ''; // Clear existing content
       productListContainer.insertAdjacentHTML('beforeend', data); // Insert new HTML content
-    })
-    .catch(error => {
+    },
+    error: function(error) {
       console.error('Error fetching products:', error);
-    });
+    }
+  });
 }
 
 let currentSortField = 'id';
@@ -138,29 +140,23 @@ function deleteProduct(event, id) {
   event.preventDefault();  // prevent form from submitting normally
 
   // Change 'list' to 'products' in the URL
-  fetch(`http://localhost:8888/New/public/products/${id}`, {
-      method: 'DELETE',
-      headers: {
-          'X-Requested-With': 'XMLHttpRequest',
-          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-      },
-  })
-  .then(response => response.json())
-  .then(data => {
+  $.ajax({
+    url: `http://localhost:8888/New/public/products/${id}`,
+    type: 'DELETE',
+    headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+    },
+    success: function(data) {
       if (data.success) {
-          document.querySelector(`#product-row-${id}`).remove();  // remove product row from the table
+        document.querySelector(`#product-row-${id}`).remove();  // remove product row from the table
       } else {
-          alert('商品の削除に失敗しました。');
+        alert('商品の削除に失敗しました。');
       }
-  })
-  .catch((error) => {
+    },
+    error: function(error) {
       console.error('Error:', error);
       alert('商品の削除に失敗しました。');
+    }
   });
 }
-
-
-
-
-
-
