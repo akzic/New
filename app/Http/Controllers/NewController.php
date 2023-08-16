@@ -24,7 +24,7 @@ class NewController extends Controller
         $minStock = $request->input('minStock');
         $maxStock = $request->input('maxStock');
         $sortColumn = $request->input('sort', 'id');
-        $sortOrder = $request->input('order', 'desc');
+        $sortOrder = $request->input('order', 'asc');
 
         $query = Product::with('company');
 
@@ -156,25 +156,26 @@ class NewController extends Controller
     }
 
     public function destroy($id)
-    {
-        try {
-            DB::beginTransaction();
+{
+    try {
+        DB::beginTransaction();
 
-            $product = Product::find($id);
+        $product = Product::find($id);
 
-            if ($product) {
-                $product->delete();
-                DB::commit();
-                return redirect()->route('list')->with('success', 'Product deleted successfully.');
-            }
-
-            DB::rollBack();
-            return redirect()->route('list')->with('error', 'Failed to delete the product.');
-        } catch (QueryException $e) {
-            DB::rollBack();
-            Log::error('Error deleting product: ' . $e->getMessage());
-            return redirect()->route('list')->with('error', 'Failed to delete the product.');
+        if ($product) {
+            $product->delete();
+            DB::commit();
+            return response()->json(['success' => true]);
         }
+
+        DB::rollBack();
+        return response()->json(['success' => false, 'message' => 'Failed to delete the product.'], 500);
+    } catch (QueryException $e) {
+        DB::rollBack();
+        Log::error('Error deleting product: ' . $e->getMessage());
+        return response()->json(['success' => false, 'message' => 'Failed to delete the product due to a database error.'], 500);
     }
+}
+
 
 }
