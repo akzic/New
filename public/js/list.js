@@ -1,64 +1,29 @@
 'use strict';
 
+const BASE_URL = 'http://localhost:8888/New/public';
+
 function showDetail(productId) {
-  let url = 'http://localhost:8888/New/public/detail/' + productId;
-  window.location.href = url;
+  window.location.href = `${BASE_URL}/detail/${productId}`;
 }
 
 function addProduct() {
-  let url = 'http://localhost:8888/New/public/add/';
-  window.location.href = url;
+  window.location.href = `${BASE_URL}/add/`;
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-  // Add event listener to the search button
   document.getElementById('search-button').addEventListener('click', searchProducts);
-
-  // Add event listeners to the price and stock inputs for real-time filtering
+  
   document.getElementById('min-price').addEventListener('input', searchProducts);
   document.getElementById('max-price').addEventListener('input', searchProducts);
   document.getElementById('min-stock').addEventListener('input', searchProducts);
   document.getElementById('max-stock').addEventListener('input', searchProducts);
 });
 
-// Function to handle product search with filters and sorting
 function searchProducts(event) {
   if (event) event.preventDefault();
 
-  // Get filter values
-  const searchInput = document.getElementById('search-input').value;
-  const manufacturerSelect = document.getElementById('manufacturer-select').value;
-  const minPrice = document.getElementById('min-price').value;
-  const maxPrice = document.getElementById('max-price').value;
-  const minStock = document.getElementById('min-stock').value;
-  const maxStock = document.getElementById('max-stock').value;
-
-  // Build the search URL with parameters
-  const searchParams = new URLSearchParams();
-
-  if (searchInput) {
-    searchParams.append('keyword', searchInput);
-  }
-  if (manufacturerSelect) {
-    searchParams.append('manufacturer', manufacturerSelect);
-  }
-  if (minPrice) {
-    searchParams.append('minPrice', minPrice);
-  }
-  if (maxPrice) {
-    searchParams.append('maxPrice', maxPrice);
-  }
-  if (minStock) {
-    searchParams.append('minStock', minStock);
-  }
-  if (maxStock) {
-    searchParams.append('maxStock', maxStock);
-  }
-
-  const url = `http://localhost:8888/New/public/list?${searchParams.toString()}`;
-
-  // Fetch the filtered and sorted products
-  fetchProductList(url);
+  const searchParams = buildSearchParams();
+  fetchProductList(`${BASE_URL}/list?${searchParams.toString()}`);
 }
 
 function fetchProductList(url) {
@@ -66,7 +31,6 @@ function fetchProductList(url) {
     url: url,
     type: 'GET',
     success: function(data) {
-      // Replace the product list container with new HTML content
       const productListContainer = document.getElementById('product-list');
       productListContainer.innerHTML = ''; // Clear existing content
       productListContainer.insertAdjacentHTML('beforeend', data); // Insert new HTML content
@@ -78,19 +42,9 @@ function fetchProductList(url) {
 }
 
 let currentSortField = 'id';
-let currentSortOrder = 'desc';
+let currentSortOrder = 'asc';
 
-function sortProductsByField(field) {
-  // If the clicked field is already the current sort field, change the order
-  if (currentSortField === field) {
-    currentSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
-  } else {
-    // Otherwise, change the sort field and reset the order to 'desc'
-    currentSortField = field;
-    currentSortOrder = 'desc';
-  }
-
-  // Get the current search parameters
+function buildSearchParams() {
   const searchInput = document.getElementById('search-input').value;
   const manufacturerSelect = document.getElementById('manufacturer-select').value;
   const minPrice = document.getElementById('min-price').value;
@@ -98,12 +52,6 @@ function sortProductsByField(field) {
   const minStock = document.getElementById('min-stock').value;
   const maxStock = document.getElementById('max-stock').value;
 
-  // Refetch the products from the server with the new sort field, order, and search parameters
-  fetchProducts(searchInput, manufacturerSelect, minPrice, maxPrice, minStock, maxStock);
-}
-
-function fetchProducts(searchInput, manufacturerSelect, minPrice, maxPrice, minStock, maxStock) {
-  // Build the search URL with parameters
   const searchParams = new URLSearchParams();
 
   // Append search parameters
@@ -130,18 +78,18 @@ function fetchProducts(searchInput, manufacturerSelect, minPrice, maxPrice, minS
   searchParams.append('sort', currentSortField);
   searchParams.append('order', currentSortOrder);
 
-  const url = `http://localhost:8888/New/public/list?${searchParams.toString()}`;
-
-  // Fetch the products from the server
-  fetchProductList(url);
+  return searchParams;
 }
 
 function deleteProduct(event, id) {
-  event.preventDefault();  // prevent form from submitting normally
+  event.preventDefault();
 
-  // Change 'list' to 'products' in the URL
+  if (!confirm('商品を削除しますか？')) {  // 確認ダイアログ
+    return;
+  }
+
   $.ajax({
-    url: `http://localhost:8888/New/public/products/${id}`,
+    url: `${BASE_URL}/products/${id}`,
     type: 'DELETE',
     headers: {
         'X-Requested-With': 'XMLHttpRequest',
@@ -154,9 +102,19 @@ function deleteProduct(event, id) {
         alert('商品の削除に失敗しました。');
       }
     },
-    error: function(error) {
-      console.error('Error:', error);
-      alert('商品の削除に失敗しました。');
+    error: function(jqXHR, textStatus, errorThrown) {
+        console.error('Error:', errorThrown);
+        alert('商品の削除に失敗しました。詳細: ' + jqXHR.responseText);
     }
   });
+}
+
+
+function sortProductsByField(field) {
+  // Update the current sort field and reverse the sort order
+  currentSortField = field;
+  currentSortOrder = currentSortOrder === 'desc' ? 'asc' : 'desc';
+
+  // Trigger a new search with the updated sort parameters
+  searchProducts();
 }
