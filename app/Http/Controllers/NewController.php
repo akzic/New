@@ -17,45 +17,7 @@ class NewController extends Controller
 {
     public function showList(Request $request)
     {
-        $keyword = $request->input('keyword');
-        $manufacturerId = $request->input('manufacturer');
-        $minPrice = $request->input('minPrice');
-        $maxPrice = $request->input('maxPrice');
-        $minStock = $request->input('minStock');
-        $maxStock = $request->input('maxStock');
-        $sortColumn = $request->input('sort', 'id');
-        $sortOrder = $request->input('order', 'asc');
-
-        $query = Product::with('company');
-
-        // Apply filters
-        if ($keyword) {
-            $query->where('product_name', 'like', '%' . $keyword . '%');
-        }
-        if ($manufacturerId) {
-            $query->where('company_id', $manufacturerId);
-        }
-        if ($minPrice) {
-            $query->where('price', '>=', $minPrice);
-        }
-        if ($maxPrice) {
-            $query->where('price', '<=', $maxPrice);
-        }
-        if ($minStock) {
-            $query->where('stock', '>=', $minStock);
-        }
-        if ($maxStock) {
-            $query->where('stock', '<=', $maxStock);
-        }
-
-        $query->orderBy($sortColumn, $sortOrder);
-
-        // Get the products
-        $products = $query->get();
-        $companies = Company::all();
-
-        // Render the product list view
-        return view('list', compact('products', 'companies'));
+        return $this->getFilteredProducts($request, 'list');
     }
 
     public function showAdd()
@@ -72,33 +34,20 @@ class NewController extends Controller
 
     public function showEdit($id)
     {
-        $product = Product::find($id);
-        $companies = Company::all(); 
-
+        $product = Product::findOrFail($id);
+        $companies = Company::all();
         return view('edit', compact('product', 'companies'));
     }
 
     public function update(Request $request, $id)
     {
-        $request->validate([
-            'name' => 'required',
-            'manufacturer' => 'required',
-            'price' => 'required|numeric',
-            'stock' => 'required|numeric',
-            'comment' => 'nullable',
-        ]);
+        $this->validateProduct($request);
 
         try {
             DB::beginTransaction();
 
-            $product = Product::find($id);
-            $product->product_name = $request->input('name');
-            $company = Company::firstOrCreate(['company_name' => $request->input('manufacturer')]);
-            $product->company_id = $company->id;
-            $product->price = $request->input('price');
-            $product->stock = $request->input('stock');
-            $product->comment = $request->input('comment');
-            $product->save();
+            $product = Product::findOrFail($id);
+            $this->saveProduct($product, $request);
 
             DB::commit();
 
@@ -112,34 +61,13 @@ class NewController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'product-name' => 'required',
-            'manufacturer' => 'required',
-            'price' => 'required|numeric',
-            'stock' => 'required|numeric',
-            'comment' => 'nullable',
-        ]);
+        $this->validateProduct($request);
 
         try {
             DB::beginTransaction();
 
             $product = new Product;
-            $product->product_name = $request->input('product-name');
-            $companyName = $request->input('manufacturer');
-            $company = Company::firstOrCreate(['company_name' => $companyName]);
-            $product->company_id = $company->id;
-            $product->price = $request->input('price');
-            $product->stock = $request->input('stock');
-            $product->comment = $request->input('comment');
-
-            if ($request->hasFile('product-image')) {
-                $image = $request->file('product-image');
-                $imagePath = $image->store('public/images');
-                $imagePath = str_replace('public/', '', $imagePath);
-                $product->img_path = $imagePath;
-            }
-
-            $product->save();
+            $this->saveProduct($product, $request);
 
             $sale = new Sale;
             $sale->product_id = $product->id;
@@ -155,27 +83,111 @@ class NewController extends Controller
         }
     }
 
-    public function destroy($id)
-{
-    try {
-        DB::beginTransaction();
-
-        $product = Product::find($id);
-
-        if ($product) {
-            $product->delete();
-            DB::commit();
-            return response()->json(['success' => true]);
-        }
-
-        DB::rollBack();
-        return response()->json(['success' => false, 'message' => 'Failed to delete the product.'], 500);
-    } catch (QueryException $e) {
-        DB::rollBack();
-        Log::error('Error deleting product: ' . $e->getMessage());
-        return response()->json(['success' => false, 'message' => 'Failed to delete the product due to a database error.'], 500);
+    private function validateProduct(Request $request)
+    {
+        $request->validate([
+            'name' => 'required',
+            'manufacturer' => 'required',
+            'price' => 'required|numeric',
+            'stock' => 'required|numeric',
+            'comment' => 'nullable',
+        ]);
     }
-}
 
+    private function saveProduct($product, Request $request)
+    {
+        $product->product_name = $request->input('name');
+        $company = Company::firstOrCreate(['company_name' => $request->input('manufacturer')]);
+        $product->company_id = $company->id;
+        $product->price = $request->input('price');
+        $product->stock = $request->input('stock');
+        $product->comment = $request->input('comment');
+        $product->save();
+    }
+
+    public function destroy($id)
+    {
+        try {
+            DB::beginTransaction();
+
+            $product = Product::findOrFail($id);
+            $product->delete();
+
+            DB::commit();
+
+            return response()->json(['success' => true]);
+        } catch (QueryException $e) {
+            DB::rollBack();
+            Log::error('Error deleting product: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to delete the product due to a database error.'], 500);
+        }
+    }
+
+    public function search(Request $request)
+    {
+        return $this->getFilteredProducts($request, 'table');
+    }
+
+    private function getFilteredProducts(Request $request, $view)
+    {
+        $products = $this->buildQuery($request)->get();
+        $companies = Company::all();
+
+        return view($view, compact('products', 'companies'));
+    }
+
+    private function buildQuery(Request $request)
+    {
+    $query = Product::with('company');
+
+    $keyword = $request->input('keyword');
+    $manufacturerId = $request->input('manufacturer');
+    $minPrice = $request->input('minPrice');
+    $maxPrice = $request->input('maxPrice');
+    $minStock = $request->input('minStock');
+    $maxStock = $request->input('maxStock');
+    $sortColumn = $request->input('sort', 'id');
+    $sortOrder = $request->input('order', 'asc');
+
+    // キーワードに基づく商品名のフィルタリング
+    if ($keyword) {
+        $query->where('product_name', 'like', '%' . $keyword . '%');
+    }
+
+    // 製造業者IDに基づくフィルタリング
+    if ($manufacturerId) {
+        $query->where('company_id', $manufacturerId);
+    }
+
+    // 最小価格と最大価格に基づくフィルタリング
+    if ($minPrice) {
+        $query->where('price', '>=', $minPrice);
+    }
+    if ($maxPrice) {
+        $query->where('price', '<=', $maxPrice);
+    }
+
+    // 在庫数の最小値と最大値に基づくフィルタリング
+    if ($minStock) {
+        $query->where('stock', '>=', $minStock);
+    }
+    if ($maxStock) {
+        $query->where('stock', '<=', $maxStock);
+    }
+
+    // ソート順序の適用
+    $query->orderBy($sortColumn, $sortOrder);
+
+    return $query;
+    }
+
+    public function fetchFilteredProducts(Request $request)
+{
+    // 商品のフィルタリング条件に基づいてデータベースから商品を取得する
+    $products = $this->buildQuery($request)->get();
+
+    // JSONとしてレスポンスを返す
+    return response()->json(['products' => $products]);
+}
 
 }
