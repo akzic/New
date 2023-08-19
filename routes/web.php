@@ -22,6 +22,7 @@ Route::get('/edit/{id}', [NewController::class, 'showEdit'])->name('edit');
 Route::put('/edit/{id}', [NewController::class, 'update'])->name('edit.update'); // changed the name to avoid conflict
 Route::post('/store', [NewController::class, 'store'])->name('store');
 
+// products routes 
 Route::get('/products', [NewController::class, 'showList'])->name('product.index');
 Route::get('/products/{id}', [NewController::class, 'show'])->name('product.show'); // The 'show' method is missing in your controller
 Route::delete('/products/{id}', [NewController::class, 'destroy'])->name('product.destroy');
