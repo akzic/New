@@ -24,10 +24,10 @@
             <input type="number" id="min-stock" placeholder="下限">
             <input type="number" id="max-stock" placeholder="上限">
         </div>
-        <button type="button" id="search-button" onclick="searchProducts(event)">検索</button>
+        <button type="submit" id="search-button" onclick="searchProducts(event)">検索</button>
     </form>
     
-    <div id="product-container">
+    <div id="table-container">
         @include('table')
     </div>
 
