@@ -149,17 +149,14 @@ class NewController extends Controller
     $sortColumn = $request->input('sort', 'id');
     $sortOrder = $request->input('order', 'asc');
 
-    // キーワードに基づく商品名のフィルタリング
     if ($keyword) {
         $query->where('product_name', 'like', '%' . $keyword . '%');
     }
 
-    // 製造業者IDに基づくフィルタリング
     if ($manufacturerId) {
         $query->where('company_id', $manufacturerId);
     }
 
-    // 最小価格と最大価格に基づくフィルタリング
     if ($minPrice) {
         $query->where('price', '>=', $minPrice);
     }
@@ -167,7 +164,6 @@ class NewController extends Controller
         $query->where('price', '<=', $maxPrice);
     }
 
-    // 在庫数の最小値と最大値に基づくフィルタリング
     if ($minStock) {
         $query->where('stock', '>=', $minStock);
     }
@@ -175,7 +171,6 @@ class NewController extends Controller
         $query->where('stock', '<=', $maxStock);
     }
 
-    // ソート順序の適用
     $query->orderBy($sortColumn, $sortOrder);
 
     return $query;
@@ -183,10 +178,8 @@ class NewController extends Controller
 
     public function fetchFilteredProducts(Request $request)
 {
-    // 商品のフィルタリング条件に基づいてデータベースから商品を取得する
     $products = $this->buildQuery($request)->get();
 
-    // JSONとしてレスポンスを返す
     return response()->json(['products' => $products]);
 }
 
