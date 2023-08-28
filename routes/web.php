@@ -19,15 +19,14 @@ Route::get('/list/search', [NewController::class, 'fetchFilteredProducts'])->nam
 Route::get('/add', [NewController::class, 'showAdd'])->name('add');
 Route::get('/detail/{id}', [NewController::class, 'showDetail'])->name('detail');
 Route::get('/edit/{id}', [NewController::class, 'showEdit'])->name('edit');
-Route::put('/edit/{id}', [NewController::class, 'update'])->name('edit.update'); // changed the name to avoid conflict
+Route::put('/edit/{id}', [NewController::class, 'update'])->name('edit.update');
 Route::post('/store', [NewController::class, 'store'])->name('store');
 
 // products routes 
 Route::get('/products', [NewController::class, 'showList'])->name('product.index');
-Route::get('/products/{id}', [NewController::class, 'show'])->name('product.show'); // The 'show' method is missing in your controller
+Route::get('/products/{id}', [NewController::class, 'show'])->name('product.show');
 Route::delete('/products/{id}', [NewController::class, 'destroy'])->name('product.destroy');
 Route::put('/products/{id}', [NewController::class, 'update'])->name('product.update');
 
-// Route::get('/register', 'Auth\RegisterController@showRegistrationForm')->name('register');
-// Route::post('/register', 'Auth\RegisterController@register');
+
 
